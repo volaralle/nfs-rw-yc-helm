@@ -1,0 +1,7 @@
+apiVersion: v2
+name: asd
+version: "1111111"
+description:
+type: application
+appVersion: "1111"
+icon: https://helm.sh/img/helm.svg

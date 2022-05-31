@@ -1,0 +1,17 @@
+{{- if .Values.externalNodeExporterAgents.enabled }}
+{{- range .Values.externalNodeExporterAgents.externalHosts }}
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: {{ .name }}-agent-monitor
+  labels:
+    app: {{ .name }}-agent-monitor
+spec:
+ type: ClusterIP
+ ports:
+ - name: {{ .name }}-agent-monitor
+   port: 80
+   targetPort: {{ .externalPort }}
+{{- end }}
+{{- end }}

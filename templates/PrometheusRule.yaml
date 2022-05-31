@@ -1,0 +1,70 @@
+{{- if .Values.externalNodeExporterAgents.enabled }}
+{{- range .Values.externalNodeExporterAgents.externalHosts }}
+---
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  labels:
+    app: kube-prometheus-stack
+    role: alert-rules
+    release: monitoring
+  name: {{ .name }}-alert-rules
+
+spec:
+  groups:
+  - name: {{ .name }} root fs 80
+    rules:
+    - alert: Root FS Used more then 80%
+      annotations:
+        description: the root / filesystem is larger than 80% on (Node {{ printf "{{ $labels.job }}" }} {{ printf "{{ $labels.instance }}" }})
+        summary: clean fs
+      expr: 100 - ((node_filesystem_avail_bytes{job="{{ .name }}-agent-monitor", mountpoint="/"} * 100)  / node_filesystem_size_bytes{job="{{ .name }}-agent-monitor", mountpoint="/"}) > 80
+      for: 1s
+      labels:
+        severity: critical
+
+  - name: {{ .name }} cpu 95
+    rules:
+    - alert: CPU load is > 95% more 5m
+      annotations:
+        description: CPU load is > 95% more 5m on (Node {{ printf "{{ $labels.job }}" }} {{ printf "{{ $labels.instance }}" }})
+        summary: CPU load is > 95% more 5m on (Node {{ printf "{{ $labels.job }}" }} {{ printf "{{ $labels.instance }}" }})
+      expr: 100 - (avg by(instance, job) (rate(node_cpu_seconds_total{job="{{ .name }}-agent-monitor", mode="idle"}[2m])) * 100) > 95
+      for: 5s
+      labels:
+        severity: critical
+
+  - name: {{ .name }} ram 80
+    rules:
+    - alert: RAM Used more than 80%
+      annotations:
+        description: RAM Used more than 80% on (Node {{ printf "{{ $labels.job }}" }} {{ printf "{{ $labels.instance }}" }})
+        summary: RAM Used more than 80% on (Node {{ printf "{{ $labels.job }}" }} {{ printf "{{ $labels.instance }}" }})
+      expr: 100 - ((node_memory_MemAvailable_bytes{job="{{ .name }}-agent-monitor"} * 100) / node_memory_MemTotal_bytes{job="{{ .name }}-agent-monitor"}) > 80
+      for: 7m
+      labels:
+        severity: warning
+
+  - name: {{ .name }} ram 95
+    rules:
+    - alert: RAM Used more than 95%!!!
+      annotations:
+        description: RAM Used more than 95% on (Node {{ printf "{{ $labels.job }}" }} {{ printf "{{ $labels.instance }}" }})
+        summary: RAM Used more than 95% on (Node {{ printf "{{ $labels.job }}" }} {{ printf "{{ $labels.instance }}" }})
+      expr: 100 - ((node_memory_MemAvailable_bytes{job="{{ .name }}-agent-monitor"} * 100) / node_memory_MemTotal_bytes{job="{{ .name }}-agent-monitor"}) > 95
+      for: 1m
+      labels:
+        severity: critical
+
+  - name: {{ .name }} inode fs less 10
+    rules:
+    - alert:  Disk is almost running out of available inodes (< 10% left)
+      annotations:
+        description: Disk is almost running out of available inodes (< 10% left) on (Node {{ printf "{{ $labels.job }}" }} {{ printf "{{ $labels.instance }}" }})
+        summary: Disk is almost running out of available inodes (< 10% left) on (Node {{ printf "{{ $labels.job }}" }} {{ printf "{{ $labels.instance }}" }})
+      expr: node_filesystem_files_free{job="{{ .name }}-agent-monitor", mountpoint ="/"} / node_filesystem_files{job="{{ .name }}-agent-monitor", mountpoint="/"} * 100 < 10
+      for: 1s
+      labels:
+        severity: critical
+{{- end }}
+{{- end }}

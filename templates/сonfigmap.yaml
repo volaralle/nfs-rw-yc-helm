@@ -1,0 +1,11 @@
+{{- if .Values.initContainers.configMap.enabled }}
+{{- range .Values.initContainers.configMap.configMapFiles }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .name }}
+data:
+  {{ .filename }}: | {{ .data | nindent 4 }}
+{{- end }}
+{{- end }}

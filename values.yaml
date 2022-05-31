@@ -1,0 +1,69 @@
+externalNodeExporterAgents:
+  enabled: false
+  externalHosts:
+    - name: nexus
+      externalIpAddr: 10.1.0.18
+      externalPort: 9100
+
+    - name: gitlab-first
+      externalIpAddr: 10.1.0.21
+      externalPort: 9100
+
+    - name: gitlab-second
+      externalIpAddr: 10.1.0.22
+      externalPort: 9100
+
+
+PersistentVolumeClaim:
+  enabled: true
+  PersistentVolumeList:
+    - name: pvc-test-rwm-first
+      storageClassName: test-nfs
+      storageCapacity: 5Gi
+      accessModes: ReadWriteMany
+      mountPath: /first
+
+    - name: pvc-test-rwm-second
+      storageClassName: nfs
+      storageCapacity: 15Gi
+      accessModes: ReadWriteMany
+      mountPath: /second
+
+    - name: pvc-test-rwm-third
+      storageClassName: test-nfs
+      storageCapacity: 1Gi
+      accessModes: ReadWriteMany
+      mountPath : /third
+
+initContainers:
+  enabled: true
+  name: sample-init-container
+  image: "amazon/aws-cli:latest"
+  args: "cp  /config.js /data-volume/ && cp  /keycloak.json /data-volume/"
+
+  emptyDir:
+    enabled: true
+    name: data-volume
+    mountPath: /data-volume
+
+  env:
+    enabled: false
+    envFiles: env
+
+  configMap:
+    enabled: true
+    configMapFiles:
+      - name: config-js
+        filename: config.js
+        data: |
+            window._env_ = {
+              "FS_API": "FS_API_VALUE ",
+            }
+      - name: keycloak-json
+        filename: keycloak.json
+        data: |
+            {
+              "realm": "KEYCLOAK_REALM_VALUE",
+              "auth-server-url": "KEYCLOAK_AUTH_SERVER_URL_VALUE",
+              "resource": "KEYCLOAK_RESOURCE_VALUE"
+            }

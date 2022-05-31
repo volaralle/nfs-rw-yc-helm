@@ -1,0 +1,88 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: test-deployment
+  labels:
+    app: test
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: test
+  template:
+    metadata:
+      labels:
+        app: test
+    spec:
+      {{- if .Values.initContainers.enabled }}
+      initContainers:
+        - name: {{ .Values.initContainers.name }}
+          image: {{ .Values.initContainers.image }}
+          command: ["/bin/sh"]
+          args: ["-c", '{{ .Values.initContainers.args }}']
+          volumeMounts:
+            {{- if .Values.initContainers.configMap.enabled }}
+            {{- range .Values.initContainers.configMap.configMapFiles }}
+            - mountPath: /{{ .filename }} #добавить возможность кастомных директорий
+              subPath: {{ .filename }}
+              name: {{ .name }}
+            {{- end }}
+            {{- end }}
+            {{- if .Values.initContainers.emptyDir.enabled }}
+            - mountPath: {{ .Values.initContainers.emptyDir.mountPath }}
+              name: {{ .Values.initContainers.emptyDir.name }}
+            {{- end }}
+          {{- if .Values.initContainers.env.enabled }}
+          envFrom:
+          {{- range .Values.initContainers.env.envFiles }}
+            - secretRef:
+                name: {{ .name }}
+          {{- end }}
+          {{- end }}
+      {{- end }}
+      containers:
+      - name: test
+        image: amazon/aws-cli:latest
+        command: ["/bin/bash"]
+        args: ["-c", "sleep infinity"]
+        volumeMounts:
+          {{- if .Values.PersistentVolumeClaim.enabled }}
+          {{- range .Values.PersistentVolumeClaim.PersistentVolumeList }}
+          - name: {{ .name }}
+            mountPath: {{ .mountPath }}
+          {{- end }}
+          {{- end }}
+          {{- if .Values.initContainers.emptyDir.enabled }}
+          - mountPath: {{ .Values.initContainers.emptyDir.mountPath }}
+            name: {{ .Values.initContainers.emptyDir.name }}
+          {{- end }}
+      volumes:
+      {{- if .Values.PersistentVolumeClaim.enabled }}
+      {{- range .Values.PersistentVolumeClaim.PersistentVolumeList }}
+        - name: {{ .name }}
+          persistentVolumeClaim:
+            claimName: {{ .name }}
+      {{- end }}
+      {{- end }}
+      {{- if .Values.initContainers.emptyDir.enabled }}
+        - name: {{ .Values.initContainers.emptyDir.name }}
+          emptyDir: {}
+      {{- end }}
+      {{- if .Values.initContainers.configMap.enabled }}
+      {{- range .Values.initContainers.configMap.configMapFiles }}
+        - name: {{ .name }}
+          configMap:
+            name: {{ .name }}
+      {{- end }}
+      {{- end }}
+
+
+
+  #    {{- if .Values.initContainers.configMap.enabled }}
+  #    volumes:
+  #    {{- range .Values.initContainers.configMap.configMapFiles }}
+  #      - name: {{ .name }}
+  #        configMap:
+  #          name: {{ .name }}
+  #    {{- end }}
+  #    {{- end }}

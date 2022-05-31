@@ -1,0 +1,18 @@
+{{- if .Values.externalNodeExporterAgents.enabled }}
+{{- range .Values.externalNodeExporterAgents.externalHosts }}
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: {{ .name }}-agent-monitor
+  labels:
+    release: monitoring
+spec:
+  endpoints:
+  - interval: 30s
+    port: {{ .name }}-agent-monitor
+  selector:
+    matchLabels:
+      app: {{ .name }}-agent-monitor
+{{- end }}
+{{- end }}

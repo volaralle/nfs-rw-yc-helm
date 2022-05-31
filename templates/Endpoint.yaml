@@ -1,0 +1,17 @@
+{{- if .Values.externalNodeExporterAgents.enabled }}
+{{- range .Values.externalNodeExporterAgents.externalHosts }}
+---
+kind: Endpoints
+apiVersion: v1
+metadata:
+  name: {{ .name }}-agent-monitor
+  labels:
+    app: {{ .name }}-agent-monitor
+subsets:
+  - addresses:
+    - ip: {{ .externalIpAddr }}
+    ports:
+      - name: {{ .name }}-agent-monitor
+        port: {{ .externalPort }}
+{{- end }}
+{{- end }}
